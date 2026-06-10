@@ -1,149 +1,318 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
+// ── 사전 (초등 6학년 수준 단어만) ──────────────────────────────
 const DICT = {
-  "polyester": "폴리에스터 — 석유 기반 합성 섬유",
+  "wondered": "궁금하다, 의아하게 생각하다",
+  "fabric": "천, 직물",
   "synthetic": "합성의, 인공의",
   "fiber": "섬유",
   "petroleum": "석유",
-  "crude oil": "원유",
-  "spinnerets": "방사구 — 실을 뽑아내는 작은 구멍",
-  "yarn": "실, 방적사",
+  "derived": "유래된, 추출된",
+  "discarded": "버려진, 폐기된",
+  "melted": "녹은, 용해된",
+  "liquid": "액체",
   "moisture": "수분, 습기",
-  "odor": "냄새, 악취",
-  "retention": "보유, 유지",
-  "microplastics": "미세플라스틱",
-  "hormones": "호르몬",
-  "testosterone": "테스토스테론 — 남성 호르몬",
-  "progesterone": "프로게스테론 — 여성 호르몬",
+  "notorious": "악명 높은",
+  "constant": "끊임없는, 지속적인",
+  "shedding": "(조각이) 떨어져 나오는",
+  "garment": "의복, 옷",
+  "suggest": "제안하다, 암시하다",
+  "impact": "영향을 미치다",
   "fertility": "생식력, 임신 능력",
-  "elastic": "탄성의, 신축성 있는",
+  "obviously": "분명히, 당연히",
+  "produce": "생산하다",
+  "consumer": "소비자",
   "recovery": "회복",
   "crease": "구김, 주름",
-  "pleats": "주름 잡기 (의복)",
+  "resistant": "저항하는, 견디는",
   "abrasion": "마모, 닳음",
-  "degradation": "열화, 분해",
-  "outerwear": "아우터웨어 — 겉옷류",
+  "perform": "성능을 발휘하다",
   "blending": "혼방 — 여러 소재 섞기",
-  "merino": "메리노 — 고급 양모 품종",
-  "pima": "피마 — 고급 면화 품종",
+  "functional": "기능적인",
+  "benefit": "이점, 혜택",
   "staples": "기본 아이템, 필수품",
-  "luxurious": "고급스러운, 사치스러운",
-  "notorious": "악명 높은",
-  "discarded": "버려진, 폐기된",
-  "derived": "유래된, 추출된",
+  "favor": "선호하다",
+  "luxurious": "고급스러운",
+  "replace": "대체하다",
+  "medium": "중간, 절충안",
 };
 
+// ── 데이터 ────────────────────────────────────────────────────
 const defaultChunks = [
   {
     id: 1, label: "도입 — 폴리에스터란",
     tip: "핵심 흐름: 새로운 소재 → 석유 유래 → 제조 공정 순서",
+    slashText: "Have you ever wondered / why wearing polyester / is bad for you? / Polyester is actually / a fairly new fabric / created around the 1940s. / To make it simple, / polyester is a synthetic fiber / derived from petroleum. / The process starts / with crude oil / or discarded plastic bottles, / which are broken down / and melted at extremely high temperatures, / turning them into a thick liquid.",
     text: "Have you ever wondered why wearing polyester is bad for you? Polyester is actually a fairly new fabric created around the 1940s. To make it simple, polyester is a synthetic fiber derived from petroleum. The process starts with crude oil or discarded plastic bottles, which are broken down and melted at extremely high temperatures, turning them into a thick liquid.",
+    pattern: { label: "be derived from ~", desc: "~에서 유래되다 / 추출되다", example: "polyester is a synthetic fiber derived from petroleum." },
     keywords: ["1940s","synthetic fiber","petroleum","crude oil","discarded plastic bottles","thick liquid"],
     blanks: [
-      { pre:"Polyester is a ", word:"synthetic fiber", post:" derived from petroleum." },
-      { pre:"The process starts with crude oil or ", word:"discarded plastic bottles", post:", melted into a thick liquid." },
-      { pre:"They are melted at extremely high temperatures into a ", word:"thick liquid", post:"." }
+      { pre:"Polyester is a ", word:"synthetic fiber", post:" derived from petroleum.", opts:["natural fabric","synthetic fiber","thick liquid"] },
+      { pre:"The process starts with crude oil or ", word:"discarded plastic bottles", post:".", opts:["recycled cotton","discarded plastic bottles","natural rubber"] },
+      { pre:"They are melted into a ", word:"thick liquid", post:".", opts:["thin thread","thick liquid","dry powder"] }
+    ],
+    puzzleSentences: [
+      ["Have you ever wondered","why wearing polyester","is bad for you?"],
+      ["polyester is","a synthetic fiber","derived from petroleum."],
+      ["The process starts","with crude oil","or discarded plastic bottles."],
     ]
   },
   {
     id: 2, label: "제조 공정",
     tip: "순서 기억: 액체 → 스피너렛 → 실 → 냉각 → 염색",
-    text: "This liquid is then pushed through tiny holes called spinnerets to form long plastic threads. These threads are then cooled and twisted into yarn. Finally, synthetic dyes and chemicals are added for color, softness, and stretch — creating polyester fabric which looks similar to other fabrics, except it's made from plastic.",
+    slashText: "This liquid / is then pushed / through tiny holes / called spinnerets / to form long plastic threads. / These threads / are then cooled and twisted / into yarn. / Finally, synthetic dyes and chemicals / are added / for color, softness, and stretch — / creating polyester fabric / which looks similar / to many other fabrics, / except it's made from plastic.",
+    text: "This liquid is then pushed through tiny holes called spinnerets to form long plastic threads. These threads are then cooled and twisted into yarn. Finally, synthetic dyes and chemicals are added for color, softness, and stretch — creating polyester fabric which looks similar to many other fabrics, except it's made from plastic.",
+    pattern: { label: "be + p.p. (수동태)", desc: "주어가 행동을 당하거나 처리될 때 사용", example: "threads are cooled and twisted into yarn." },
     keywords: ["spinnerets","long plastic threads","cooled and twisted","synthetic dyes","made from plastic"],
     blanks: [
-      { pre:"The liquid is pushed through tiny holes called ", word:"spinnerets", post:" to form threads." },
-      { pre:"Threads are cooled and twisted into yarn, then ", word:"synthetic dyes", post:" are added." },
-      { pre:"It looks like fabric, but it's ", word:"made from plastic", post:"." }
+      { pre:"The liquid is pushed through tiny holes called ", word:"spinnerets", post:".", opts:["spinnerets","filters","nozzles"] },
+      { pre:"Threads are cooled and twisted into ", word:"yarn", post:".", opts:["fabric","yarn","plastic"] },
+      { pre:"It looks like fabric, but it's ", word:"made from plastic", post:".", opts:["made from cotton","made from plastic","made from rubber"] }
+    ],
+    puzzleSentences: [
+      ["This liquid","is pushed through","tiny holes called spinnerets."],
+      ["These threads","are cooled and twisted","into yarn."],
+      ["synthetic dyes","are added","for color, softness, and stretch."],
     ]
   },
   {
     id: 3, label: "3가지 문제점",
     tip: "숫자로 묶어라: ① 수분→냄새 ② 마이크로플라스틱 ③ 호르몬",
+    slashText: "First, / it doesn't absorb moisture — / instead, it moves sweat / across the surface, / making it notorious / for odor retention. / Second, / there is constant shedding / of microplastics / throughout the garment's life cycle, / especially when washing. / Third, / some studies suggest / polyester could impact your hormones — / lowering testosterone and sperm counts in men, / and disrupting progesterone in women, / which could affect fertility.",
     text: "First, it doesn't absorb moisture — instead, it moves sweat across the surface, making it notorious for odor retention. Second, there is constant shedding of microplastics throughout the garment's life cycle, especially when washing. Third, some studies suggest polyester could impact your hormones — lowering testosterone and sperm counts in men, and disrupting progesterone in women, which could affect fertility.",
+    pattern: { label: "making it + 형용사", desc: "앞 문장의 결과를 이어서 설명하는 분사구문", example: "it moves sweat across the surface, making it notorious for odor retention." },
     keywords: ["moisture","odor retention","microplastics","hormones","testosterone","progesterone","fertility"],
     blanks: [
-      { pre:"Polyester doesn't absorb moisture — it's notorious for ", word:"odor retention", post:"." },
-      { pre:"There is constant shedding of ", word:"microplastics", post:" especially when washing." },
-      { pre:"It may lower ", word:"testosterone", post:" and disrupt progesterone, affecting fertility." }
+      { pre:"Polyester doesn't absorb moisture — it's notorious for ", word:"odor retention", post:".", opts:["water resistance","odor retention","color fading"] },
+      { pre:"There is constant shedding of ", word:"microplastics", post:" when washing.", opts:["microplastics","natural fibers","synthetic dyes"] },
+      { pre:"It may lower ", word:"testosterone", post:" and disrupt progesterone.", opts:["testosterone","progesterone","fertility"] }
+    ],
+    puzzleSentences: [
+      ["it doesn't absorb moisture —","instead, it moves sweat","across the surface."],
+      ["there is constant shedding","of microplastics","throughout the garment's life cycle."],
+      ["polyester could impact","your hormones,","affecting fertility."],
     ]
   },
   {
     id: 4, label: "사용 이유 ①② — 가격 & 탄성",
     tip: "긍정 전환: 'That doesn't mean...' 을 기억하라",
-    text: "With all that said, that doesn't necessarily mean polyester doesn't have a place in fashion. First and most obviously, it's cheaper to produce — allowing brands to make clothes at a lower cost. Second, polyester has great elastic recovery, which means it doesn't crease easily and holds pleats and folds really well — hence why Issey Miyake uses it for their famous A-POC trousers.",
+    slashText: "With all that said, / that doesn't necessarily mean / polyester doesn't have a place / in fashion at all. / First and most obviously, / it's cheaper to produce — / allowing brands to make clothes / at a lower cost. / Second, / polyester has great elastic recovery, / which means / it doesn't crease easily / and holds pleats and folds / really well — / hence why Issey Miyake / uses it for their famous A-POC trousers.",
+    text: "With all that said, that doesn't necessarily mean polyester doesn't have a place in fashion at all. First and most obviously, it's cheaper to produce — allowing brands to make clothes at a lower cost. Second, polyester has great elastic recovery, which means it doesn't crease easily and holds pleats and folds really well — hence why Issey Miyake uses it for their famous A-POC trousers.",
+    pattern: { label: "which means ~", desc: "앞 내용을 받아 의미·결과를 설명하는 관계절", example: "polyester has great elastic recovery, which means it doesn't crease easily." },
     keywords: ["doesn't necessarily","cheaper to produce","elastic recovery","crease","pleats and folds","Issey Miyake"],
     blanks: [
-      { pre:"Polyester doesn't necessarily mean it has no place in fashion. It's ", word:"cheaper to produce", post:"." },
-      { pre:"It has great ", word:"elastic recovery", post:" — it doesn't crease." },
-      { pre:"It holds ", word:"pleats and folds", post:" well, like Issey Miyake's A-POC trousers." }
+      { pre:"That doesn't necessarily mean polyester has no place. It's ", word:"cheaper to produce", post:".", opts:["harder to recycle","cheaper to produce","better for skin"] },
+      { pre:"It has great ", word:"elastic recovery", post:".", opts:["elastic recovery","color stability","UV resistance"] },
+      { pre:"It holds ", word:"pleats and folds", post:" really well.", opts:["pleats and folds","shape and color","water and dirt"] }
+    ],
+    puzzleSentences: [
+      ["that doesn't necessarily mean","polyester doesn't have","a place in fashion."],
+      ["it's cheaper to produce —","allowing brands","to make clothes at a lower cost."],
+      ["polyester has great elastic recovery,","which means","it doesn't crease easily."],
     ]
   },
   {
     id: 5, label: "사용 이유 ③ — 고품질 & 블렌딩",
     tip: "핵심: '모든 폴리에스터가 같지 않다' → outerwear → blending",
+    slashText: "Third, / not all polyester is created equally. / Higher quality polyesters / can be stronger, smoother, / and highly resistant / to abrasion and UV degradation — / performing well / for products like outerwear shells. / And blending polyester / with natural fibers / can offer functional benefits / that you otherwise wouldn't get / from the natural fabric alone.",
     text: "Third, not all polyester is created equally. Higher quality polyesters can be stronger, smoother, and highly resistant to abrasion and UV degradation — performing well for products like outerwear shells. And blending polyester with natural fibers can offer functional benefits that you otherwise wouldn't get from the natural fabric alone.",
+    pattern: { label: "not all ~ (부분 부정)", desc: "'모두 ~한 것은 아니다' — 일부는 그렇지 않다는 표현", example: "not all polyester is created equally." },
     keywords: ["not all polyester","abrasion","UV degradation","outerwear shells","blending","functional benefits"],
     blanks: [
-      { pre:"Not all polyester is equal — high quality ones resist ", word:"abrasion", post:" and UV degradation." },
-      { pre:"They perform well for ", word:"outerwear shells", post:"." },
-      { pre:"", word:"Blending", post:" polyester with natural fibers can offer functional benefits." }
+      { pre:"Not all polyester is equal — they resist ", word:"abrasion", post:" and UV degradation.", opts:["abrasion","moisture","heat"] },
+      { pre:"They perform well for ", word:"outerwear shells", post:".", opts:["outerwear shells","casual shirts","dress trousers"] },
+      { pre:"Blending polyester with natural fibers can offer ", word:"functional benefits", post:".", opts:["functional benefits","lower prices","better colors"] }
+    ],
+    puzzleSentences: [
+      ["not all polyester","is created","equally."],
+      ["Higher quality polyesters","are highly resistant","to abrasion and UV degradation."],
+      ["blending polyester","with natural fibers","can offer functional benefits."],
     ]
   },
   {
     id: 6, label: "결론 — 개인 철학",
     tip: "감성 마무리: 자연 섬유 선호 → The Saints → 질문 던지기",
+    slashText: "For everyday staples, / I personally would always / favor natural fibers. / Within my brand, The Saints, / we decided to create clothes / purely from natural fibers / of the highest quality / we can get our hands on. / Nothing can replace / the luxurious feel / of a tightly knit soft merino wool, / or a silky smooth pima cotton. / But what do you think — / does polyester have a place in fashion, / or is there a happy medium?",
     text: "For everyday staples, I personally would always favor natural fibers. Within my brand, The Saints, we decided to create clothes purely from natural fibers of the highest quality we can get our hands on. Nothing can replace the luxurious feel of a tightly knit soft merino wool, or a silky smooth pima cotton. But what do you think — does polyester have a place in fashion, or is there a happy medium?",
+    pattern: { label: "Nothing can replace ~", desc: "'~를 대체할 수 있는 것은 없다' — 강조 표현", example: "Nothing can replace the luxurious feel of merino wool." },
     keywords: ["everyday staples","The Saints","merino wool","pima cotton","happy medium"],
     blanks: [
-      { pre:"For ", word:"everyday staples", post:", I always favor natural fibers." },
-      { pre:"Nothing replaces the feel of soft ", word:"merino wool", post:" or silky smooth pima cotton." },
-      { pre:"Is there a ", word:"happy medium", post:"?" }
+      { pre:"For ", word:"everyday staples", post:", I always favor natural fibers.", opts:["everyday staples","special occasions","formal events"] },
+      { pre:"Nothing replaces the feel of soft ", word:"merino wool", post:".", opts:["merino wool","polyester blend","pima cotton"] },
+      { pre:"Is there a ", word:"happy medium", post:"?", opts:["happy medium","clear answer","simple solution"] }
+    ],
+    puzzleSentences: [
+      ["For everyday staples,","I would always","favor natural fibers."],
+      ["Nothing can replace","the luxurious feel","of merino wool."],
+      ["does polyester have","a place in fashion,","or is there a happy medium?"],
     ]
   }
 ];
 
-const MODES = ["① 읽기","② 키워드","③ 빈칸","④ 쉐도잉"];
+const MODES = ["① 읽기","② 키워드","③ 빈칸","④ 퍼즐"];
 
+// ── TTS 음성 재생 ────────────────────────────────────────────
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-US"; u.rate = 0.9;
+  window.speechSynthesis.speak(u);
+}
+
+// ── 단어 툴팁 ────────────────────────────────────────────────
 function Tooltip({ word, onClose }) {
-  const key = Object.keys(DICT).find(k => word.toLowerCase().includes(k) || k.includes(word.toLowerCase()));
+  const clean = word.toLowerCase().replace(/[^a-z]/g,"");
+  const key = Object.keys(DICT).find(k => k === clean);
   const meaning = key ? DICT[key] : null;
+  useEffect(() => { if (meaning) speak(word); }, []);
   if (!meaning) return null;
   return (
-    <div onClick={onClose} style={{
-      position:"fixed", inset:0, zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center",
-      background:"rgba(0,0,0,0.35)"
-    }}>
-      <div onClick={e=>e.stopPropagation()} style={{
-        background:"#fff", borderRadius:14, padding:"18px 22px", maxWidth:280, boxShadow:"0 8px 32px rgba(0,0,0,0.18)"
-      }}>
-        <div style={{fontSize:18, fontWeight:600, color:"#111", marginBottom:6}}>{word}</div>
-        <div style={{fontSize:15, color:"#444", lineHeight:1.6}}>{meaning}</div>
-        <button onClick={onClose} style={{marginTop:14, width:"100%", padding:"8px", borderRadius:8, border:"none", background:"#1D9E75", color:"#fff", fontSize:14, cursor:"pointer"}}>닫기</button>
+    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.35)"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,padding:"20px 24px",maxWidth:300,width:"90%",boxShadow:"0 8px 32px rgba(0,0,0,0.2)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+          <div style={{fontSize:20,fontWeight:700,color:"#111"}}>{word}</div>
+          <button onClick={()=>speak(word)} style={{padding:"4px 10px",borderRadius:8,border:"none",background:"#f0faf6",color:"#1D9E75",fontSize:13,cursor:"pointer"}}>🔊</button>
+        </div>
+        <div style={{fontSize:15,color:"#444",lineHeight:1.7}}>{meaning}</div>
+        <button onClick={onClose} style={{marginTop:14,width:"100%",padding:"9px",borderRadius:8,border:"none",background:"#1D9E75",color:"#fff",fontSize:14,cursor:"pointer"}}>닫기</button>
       </div>
     </div>
   );
 }
 
-function ClickableText({ text }) {
+// ── 읽기 모드 텍스트 (슬래시 + 클릭) ────────────────────────
+function SlashText({ slashText }) {
   const [tooltip, setTooltip] = useState(null);
-  const words = text.split(/(\s+|[—–,.])/);
+  const segments = slashText.split(" / ");
   return (
-    <span>
-      {tooltip && <Tooltip word={tooltip} onClose={() => setTooltip(null)} />}
-      {words.map((w, i) => {
-        const clean = w.replace(/[^a-zA-Z]/g, "").toLowerCase();
-        const hasDict = clean && Object.keys(DICT).some(k => k === clean || k.split(" ")[0] === clean);
-        return (
-          <span key={i}
-            onClick={hasDict ? () => setTooltip(w.trim()) : undefined}
-            style={hasDict ? { borderBottom:"1.5px dotted #1D9E75", cursor:"pointer", color:"#0a5c3f" } : {}}
-          >{w}</span>
-        );
-      })}
-    </span>
+    <div style={{fontSize:15,lineHeight:2.1,color:"#222"}}>
+      {tooltip && <Tooltip word={tooltip} onClose={()=>setTooltip(null)} />}
+      {segments.map((seg, si) => (
+        <span key={si}>
+          {seg.split(/(\s+)/).map((w, wi) => {
+            const clean = w.replace(/[^a-zA-Z]/g,"").toLowerCase();
+            const hasDict = clean && Object.keys(DICT).includes(clean);
+            return (
+              <span key={wi}
+                onClick={hasDict ? ()=>setTooltip(w.replace(/[^a-zA-Z]/g,"")) : undefined}
+                style={hasDict ? {borderBottom:"1.5px dotted #1D9E75",cursor:"pointer",color:"#0a5c3f"} : {}}
+              >{w}</span>
+            );
+          })}
+          {si < segments.length - 1 && <span style={{color:"#1D9E75",fontWeight:700,margin:"0 2px"}}> /</span>}
+          {" "}
+        </span>
+      ))}
+    </div>
   );
 }
 
+// ── 퍼즐 모드 ────────────────────────────────────────────────
+function PuzzleMode({ chunk, onDone }) {
+  const [sentIdx, setSentIdx] = useState(0);
+  const [selected, setSelected] = useState([]);
+  const [shuffled, setShuffled] = useState([]);
+  const [result, setResult] = useState(null); // "correct" | "wrong"
+  const [allDone, setAllDone] = useState(false);
+
+  const sentences = chunk.puzzleSentences;
+
+  useEffect(() => { initSentence(0); }, [chunk]);
+
+  function initSentence(idx) {
+    const arr = [...sentences[idx]];
+    // Fisher-Yates shuffle
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    setShuffled(arr);
+    setSelected([]);
+    setResult(null);
+    setSentIdx(idx);
+  }
+
+  function tapCard(card) {
+    if (result) return;
+    if (selected.includes(card)) {
+      setSelected(selected.filter(c => c !== card));
+    } else {
+      const next = [...selected, card];
+      setSelected(next);
+      if (next.length === sentences[sentIdx].length) {
+        const correct = next.join(" ") === sentences[sentIdx].join(" ");
+        setResult(correct ? "correct" : "wrong");
+        if (correct) speak(sentences[sentIdx].join(" "));
+      }
+    }
+  }
+
+  function next() {
+    if (sentIdx < sentences.length - 1) {
+      initSentence(sentIdx + 1);
+    } else {
+      setAllDone(true);
+      onDone();
+    }
+  }
+
+  function retry() { initSentence(sentIdx); }
+
+  const remaining = shuffled.filter(c => !selected.includes(c));
+
+  return (
+    <div>
+      <div style={{fontSize:12,color:"#888",marginBottom:10}}>문장 {sentIdx+1} / {sentences.length} — 올바른 순서로 탭하세요</div>
+
+      {/* 선택된 카드 영역 */}
+      <div style={{minHeight:52,background:"#f9fdf9",border:"1.5px solid #1D9E75",borderRadius:10,padding:"10px 12px",marginBottom:12,display:"flex",flexWrap:"wrap",gap:6,alignItems:"center"}}>
+        {selected.length === 0
+          ? <span style={{color:"#bbb",fontSize:13}}>여기에 순서대로 쌓입니다</span>
+          : selected.map((c,i) => (
+            <span key={i} onClick={()=>{ if(!result) setSelected(selected.filter((_,j)=>j!==i)); }}
+              style={{background:"#1D9E75",color:"#fff",padding:"5px 10px",borderRadius:8,fontSize:13,cursor:"pointer"}}>
+              {c}
+            </span>
+          ))
+        }
+      </div>
+
+      {/* 남은 카드 */}
+      <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:16}}>
+        {remaining.map((c,i) => (
+          <span key={i} onClick={()=>tapCard(c)}
+            style={{background:"#f0f0f0",color:"#333",padding:"7px 12px",borderRadius:8,fontSize:13,cursor:"pointer",border:"1px solid #ddd"}}>
+            {c}
+          </span>
+        ))}
+      </div>
+
+      {result === "correct" && (
+        <div style={{background:"#e6f7f1",color:"#085041",padding:"10px 14px",borderRadius:8,fontSize:14,marginBottom:10}}>
+          ✓ 정답! 🎉
+        </div>
+      )}
+      {result === "wrong" && (
+        <div style={{background:"#fef0ec",color:"#7a2e10",padding:"10px 14px",borderRadius:8,fontSize:14,marginBottom:10}}>
+          순서가 틀렸어요. 다시 해봐!
+        </div>
+      )}
+
+      <div style={{display:"flex",gap:8}}>
+        {result === "wrong" && <button onClick={retry} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #ddd",background:"#f5f5f5",fontSize:14,cursor:"pointer"}}>다시 시도</button>}
+        {result === "correct" && (
+          <button onClick={next} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:"#1D9E75",color:"#fff",fontSize:14,cursor:"pointer"}}>
+            {sentIdx < sentences.length - 1 ? "다음 문장 →" : "✓ 완료!"}
+          </button>
+        )}
+      </div>
+      {allDone && <div style={{marginTop:8,color:"#1D9E75",fontSize:14,fontWeight:500}}>이 청크 퍼즐 완료!</div>}
+    </div>
+  );
+}
+
+// ── 스크립트 추가 모달 ────────────────────────────────────────
 function AddScriptModal({ onClose, onAdd }) {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -158,10 +327,8 @@ function AddScriptModal({ onClose, onAdd }) {
         headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
           model:"claude-sonnet-4-20250514",
-          max_tokens:1000,
-          messages:[{
-            role:"user",
-            content:`아래 영어 스크립트를 암기 학습용으로 분석해줘. 반드시 JSON만 출력하고 다른 텍스트는 절대 쓰지 마.
+          max_tokens:2000,
+          messages:[{ role:"user", content:`아래 영어 스크립트를 암기 학습용으로 분석해줘. JSON만 출력하고 다른 텍스트는 절대 쓰지 마.
 
 형식:
 {
@@ -169,24 +336,29 @@ function AddScriptModal({ onClose, onAdd }) {
     {
       "label": "섹션 제목 (한국어, 15자 이내)",
       "tip": "암기 팁 (한국어, 30자 이내)",
-      "text": "원문 텍스트 그대로",
+      "text": "원문 텍스트",
+      "slashText": "끊어읽기 슬래시 포함 텍스트 (/ 로 구분)",
+      "pattern": { "label": "패턴명", "desc": "한국어 설명", "example": "예문" },
       "keywords": ["핵심단어1", "핵심단어2"],
       "blanks": [
-        {"pre": "앞텍스트", "word": "빈칸단어", "post": "뒤텍스트"}
+        {"pre": "앞텍스트", "word": "정답", "post": "뒤텍스트", "opts": ["오답1", "정답", "오답2"]}
+      ],
+      "puzzleSentences": [
+        ["청크1", "청크2", "청크3"]
       ]
     }
   ]
 }
 
 규칙:
-- 스크립트를 3~6개 청크로 나눠
-- 각 청크 keywords는 3~6개
-- 각 청크 blanks는 2~3개
-- blanks의 pre+word+post를 합치면 완전한 문장이 돼야 함
+- 3~6개 청크로 나눠
+- slashText는 의미 단위로 / 삽입
+- pattern은 구동사, 수동태, 분사구문 등 문법 패턴 1개
+- blanks 2~3개, opts는 항상 3개 (정답 포함)
+- puzzleSentences는 청크당 2~3문장, 각 문장을 2~4개 덩어리로
 
 스크립트:
-${text}`
-          }]
+${text}` }]
         })
       });
       const data = await res.json();
@@ -203,11 +375,8 @@ ${text}`
     <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
       <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"24px 20px",width:"100%",maxWidth:520}}>
         <div style={{fontSize:16,fontWeight:600,marginBottom:4}}>새 스크립트 추가</div>
-        <div style={{fontSize:13,color:"#888",marginBottom:14}}>영어 텍스트를 붙여넣으면 AI가 자동으로 청크/키워드/빈칸을 만들어줘.</div>
-        <textarea
-          value={text}
-          onChange={e=>setText(e.target.value)}
-          placeholder="스크립트를 여기에 붙여넣어..."
+        <div style={{fontSize:13,color:"#888",marginBottom:14}}>영어 텍스트를 붙여넣으면 AI가 자동으로 분석해줘.</div>
+        <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="스크립트를 여기에 붙여넣어..."
           style={{width:"100%",minHeight:140,padding:"10px 12px",fontSize:14,border:"1px solid #ddd",borderRadius:10,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box"}}
         />
         {error && <div style={{color:"#c0392b",fontSize:13,marginTop:6}}>{error}</div>}
@@ -222,6 +391,7 @@ ${text}`
   );
 }
 
+// ── 메인 ─────────────────────────────────────────────────────
 export default function App() {
   const [scripts, setScripts] = useState([{ title:"Polyester", chunks: defaultChunks }]);
   const [scriptIdx, setScriptIdx] = useState(0);
@@ -231,35 +401,28 @@ export default function App() {
   const [hidden, setHidden] = useState(new Set());
   const [inputs, setInputs] = useState({});
   const [checked, setChecked] = useState(false);
-  const [shadowText, setShadowText] = useState("");
   const [showAdd, setShowAdd] = useState(false);
 
   const chunks = scripts[scriptIdx].chunks;
   const chunk = chunks[ci];
   const progress = Math.round(done.size / chunks.length * 100);
 
-  function goChunk(i) { setCi(i); setMode(0); setHidden(new Set()); setInputs({}); setChecked(false); setShadowText(""); }
+  function goChunk(i) { setCi(i); setMode(0); setHidden(new Set()); setInputs({}); setChecked(false); }
   function goMode(m) { setMode(m); setHidden(new Set()); setInputs({}); setChecked(false); }
   function toggleKw(kw) { setHidden(prev => { const n=new Set(prev); n.has(kw)?n.delete(kw):n.add(kw); return n; }); }
 
-  function isCorrect(i) {
-    const val=(inputs[i]||"").toLowerCase().trim();
-    const ans=chunk.blanks[i].word.toLowerCase().trim();
-    return val===ans||ans.startsWith(val)||val.startsWith(ans.split(" ")[0]);
-  }
+  function isCorrect(i) { return inputs[i] === chunk.blanks[i].word; }
+
   function checkFill() {
     setChecked(true);
-    if (chunk.blanks.every((_,i)=>isCorrect(i))) setDone(prev=>new Set([...prev,ci]));
-  }
-  function markDone() {
-    setDone(prev=>new Set([...prev,ci]));
-    if (ci<chunks.length-1) setTimeout(()=>goChunk(ci+1),600);
+    if (chunk.blanks.every((_,i) => isCorrect(i))) setDone(prev => new Set([...prev, ci]));
   }
 
   function addScript(newChunks) {
-    const numbered = newChunks.map((c,i)=>({...c, id:i+1}));
-    setScripts(prev=>[...prev,{title:`스크립트 ${prev.length+1}`, chunks:numbered}]);
-    setScriptIdx(scripts.length);
+    const numbered = newChunks.map((c,i) => ({...c, id:i+1}));
+    const newIdx = scripts.length;
+    setScripts(prev => [...prev, { title:`스크립트 ${prev.length+1}`, chunks:numbered }]);
+    setScriptIdx(newIdx);
     setCi(0); setMode(0); setDone(new Set()); setHidden(new Set()); setInputs({}); setChecked(false);
     setShowAdd(false);
   }
@@ -272,20 +435,19 @@ export default function App() {
     cardLabel:{fontSize:11,fontWeight:600,color:"#1D9E75",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:10},
     btn:{flex:1,padding:"10px 8px",fontSize:14,borderRadius:8,border:"1px solid #ddd",background:"#f5f5f5",color:"#444",cursor:"pointer"},
     btnGreen:{flex:1,padding:"10px 8px",fontSize:14,borderRadius:8,border:"none",background:"#1D9E75",color:"#fff",cursor:"pointer",fontWeight:500},
-    tip:{background:"#f0faf6",borderLeft:"3px solid #1D9E75",padding:"8px 12px",borderRadius:"0 8px 8px 0",fontSize:13,color:"#0F6E56",marginBottom:14,lineHeight:1.6},
+    tip:{background:"#f0faf6",borderLeft:"3px solid #1D9E75",padding:"8px 12px",borderRadius:"0 8px 8px 0",fontSize:13,color:"#0F6E56",marginBottom:10,lineHeight:1.6},
+    pattern:{background:"#fffbea",borderLeft:"3px solid #f0b429",padding:"8px 12px",borderRadius:"0 8px 8px 0",fontSize:13,color:"#7a4f00",marginBottom:14,lineHeight:1.6},
   };
 
   return (
     <div style={s.wrap}>
       {showAdd && <AddScriptModal onClose={()=>setShowAdd(false)} onAdd={addScript} />}
 
-      {/* Header */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
         <div style={{fontSize:17,fontWeight:600,color:"#111"}}>Script trainer</div>
         <button onClick={()=>setShowAdd(true)} style={{padding:"5px 12px",fontSize:13,borderRadius:8,border:"none",background:"#1D9E75",color:"#fff",cursor:"pointer"}}>+ 추가</button>
       </div>
 
-      {/* Script tabs */}
       {scripts.length > 1 && (
         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
           {scripts.map((sc,i)=>(
@@ -302,7 +464,6 @@ export default function App() {
       <div style={s.progBar}><div style={{...s.progFill,width:progress+"%"}} /></div>
       <div style={{fontSize:12,color:"#888",marginBottom:14}}>{done.size} / {chunks.length} chunks 완료</div>
 
-      {/* Chunk nav */}
       <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
         {chunks.map((c,i)=>(
           <button key={i} onClick={()=>goChunk(i)} style={{
@@ -315,7 +476,6 @@ export default function App() {
         ))}
       </div>
 
-      {/* Mode tabs */}
       <div style={{display:"flex",gap:6,marginBottom:14}}>
         {MODES.map((m,i)=>(
           <button key={i} onClick={()=>goMode(i)} style={{
@@ -325,12 +485,21 @@ export default function App() {
       </div>
 
       <div style={s.tip}>{chunk.tip}</div>
+      {chunk.pattern && (
+        <div style={s.pattern}>
+          <strong>📌 {chunk.pattern.label}</strong><br/>
+          {chunk.pattern.desc}<br/>
+          <span style={{fontSize:12,opacity:0.8}}>예) {chunk.pattern.example}</span>
+        </div>
+      )}
 
       <div style={s.card}>
         <div style={s.cardLabel}>{chunk.id} / {chunks.length} — {chunk.label}</div>
 
-        {mode===0 && <div style={{fontSize:15,lineHeight:1.9,color:"#222"}}><ClickableText text={chunk.text} /></div>}
+        {/* 읽기 */}
+        {mode===0 && <SlashText slashText={chunk.slashText || chunk.text} />}
 
+        {/* 키워드 */}
         {mode===1 && (
           <div style={{fontSize:15,lineHeight:1.9,color:"#222"}}>
             {(()=>{
@@ -345,8 +514,7 @@ export default function App() {
                     <span key={kw} onClick={()=>toggleKw(kw)} style={{
                       background:hidden.has(kw)?"#ccc":"#E1F5EE",
                       color:hidden.has(kw)?"#ccc":"#085041",
-                      padding:"1px 6px",borderRadius:4,cursor:"pointer",
-                      fontWeight:500,userSelect:"none",transition:"all 0.15s",
+                      padding:"1px 6px",borderRadius:4,cursor:"pointer",fontWeight:500,userSelect:"none",
                     }}>{hidden.has(kw)?"\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0":kw}</span>,
                     part.slice(idx+kw.length)
                   ];
@@ -357,39 +525,38 @@ export default function App() {
           </div>
         )}
 
+        {/* 빈칸 — 객관식 */}
         {mode===2 && (
           <div>
             {chunk.blanks.map((b,i)=>(
-              <div key={i} style={{marginBottom:14,fontSize:15,lineHeight:2.3}}>
-                {b.pre}
-                <input value={inputs[i]||""} onChange={e=>setInputs({...inputs,[i]:e.target.value})} placeholder="?"
-                  style={{
-                    border:"none",
-                    borderBottom:`2px solid ${!checked?"#1D9E75":isCorrect(i)?"#1D9E75":"#D85A30"}`,
-                    background:!checked?"transparent":isCorrect(i)?"#e6f7f1":"#fef0ec",
-                    fontSize:15,padding:"0 5px",minWidth:100,outline:"none",
-                    fontFamily:"inherit",color:"#222",borderRadius:checked?4:0,
-                  }}
-                />
-                {b.post}
+              <div key={i} style={{marginBottom:18}}>
+                <div style={{fontSize:15,lineHeight:1.8,marginBottom:8,color:"#222"}}>
+                  {b.pre}<span style={{background:"#e8e8e8",borderRadius:4,padding:"1px 8px",color:"#999"}}>?</span>{b.post}
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {b.opts.map((opt,oi)=>{
+                    const isSelected = inputs[i] === opt;
+                    const showResult = checked;
+                    const isAnswer = opt === b.word;
+                    let bg = "#f5f5f5", color = "#333", border = "1px solid #ddd";
+                    if (showResult && isAnswer) { bg="#e6f7f1"; color="#085041"; border="1px solid #1D9E75"; }
+                    else if (showResult && isSelected && !isAnswer) { bg="#fef0ec"; color="#7a2e10"; border="1px solid #D85A30"; }
+                    else if (!showResult && isSelected) { bg="#e8f4ff"; color="#1a5fa8"; border="1px solid #4a9eff"; }
+                    return (
+                      <button key={oi} onClick={()=>!checked&&setInputs({...inputs,[i]:opt})} style={{
+                        padding:"9px 14px",borderRadius:8,border,background:bg,color,fontSize:14,cursor:checked?"default":"pointer",textAlign:"left",
+                      }}>{opt}</button>
+                    );
+                  })}
+                </div>
               </div>
             ))}
           </div>
         )}
 
+        {/* 퍼즐 */}
         {mode===3 && (
-          <div>
-            <div style={{fontSize:12,color:"#888",marginBottom:8}}>키워드 힌트</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:14}}>
-              {chunk.keywords.map(k=>(
-                <span key={k} style={{background:"#f5f5f5",border:"1px solid #e0e0e0",padding:"3px 10px",borderRadius:8,fontSize:13,color:"#555"}}>{k}</span>
-              ))}
-            </div>
-            <textarea value={shadowText} onChange={e=>setShadowText(e.target.value)}
-              placeholder="기억나는 내용을 자유롭게 적어보세요..."
-              style={{width:"100%",minHeight:90,padding:"10px 12px",fontSize:14,border:"1px solid #ddd",borderRadius:8,background:"#fafafa",fontFamily:"inherit",color:"#222",resize:"vertical"}}
-            />
-          </div>
+          <PuzzleMode chunk={chunk} onDone={()=>setDone(prev=>new Set([...prev,ci]))} />
         )}
       </div>
 
@@ -410,26 +577,14 @@ export default function App() {
         <div>
           <div style={{display:"flex",gap:8,marginBottom:8}}>
             <button style={s.btnGreen} onClick={checkFill}>정답 확인</button>
-            <button style={s.btn} onClick={()=>goMode(3)}>→ 쉐도잉</button>
+            <button style={s.btn} onClick={()=>goMode(3)}>→ 퍼즐</button>
           </div>
           {checked && (
             <div style={{padding:"10px 14px",borderRadius:8,fontSize:14,
               background:chunk.blanks.every((_,i)=>isCorrect(i))?"#e6f7f1":"#fef0ec",
               color:chunk.blanks.every((_,i)=>isCorrect(i))?"#085041":"#7a2e10",
             }}>
-              {chunk.blanks.every((_,i)=>isCorrect(i))?"완벽해요! 쉐도잉으로 넘어가세요.":"틀린 칸은 빨간색으로 표시됐어요. 다시 읽고 재시도!"}
-            </div>
-          )}
-        </div>
-      )}
-      {mode===3 && (
-        <div>
-          <button style={{...s.btnGreen,width:"100%"}} onClick={markDone}>
-            ✓ 이 청크 완료{ci<chunks.length-1?" → 다음으로":""}
-          </button>
-          {done.has(ci) && (
-            <div style={{marginTop:8,padding:"10px 14px",borderRadius:8,background:"#e6f7f1",color:"#085041",fontSize:14}}>
-              {done.size===chunks.length?"🎉 전체 완료! 처음부터 통암기 도전해봐!":` 완료! (${done.size}/${chunks.length})`}
+              {chunk.blanks.every((_,i)=>isCorrect(i))?"완벽해요! 퍼즐로 넘어가세요.":"틀린 보기가 있어요. 다시 확인해봐!"}
             </div>
           )}
         </div>
