@@ -204,107 +204,72 @@ function Tooltip({ word, onClose }) {
   );
 }
 
-// ── 읽기 모드 텍스트 (슬래시 + 구문재생 + 문장재생) ────────────
-function SlashText({ slashText, text }) {
+// ── 읽기 모드 텍스트 (청크 전체 + 문장별 재생) ──────────────
+function SlashText({ slashText, text, chunkText }) {
   const [tooltip, setTooltip] = useState(null);
-  const [playingPhrase, setPlayingPhrase] = useState(null);
-  const [playingSent, setPlayingSent] = useState(null);
+  const [playingIdx, setPlayingIdx] = useState(null); // null=없음, -1=전체, 0~N=문장
 
-  // 문장 단위로 분리 (마침표/물음표/느낌표 기준)
-  const rawSentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
 
-  // 슬래시 구문을 문장에 매핑
-  const allPhrases = slashText.split(" / ");
-  let sentGroups = [];
-  let phraseIdx = 0;
-  rawSentences.forEach((sent, si) => {
-    const sentClean = sent.trim().replace(/[^a-zA-Z ]/g,"").toLowerCase();
-    let group = [];
-    while (phraseIdx < allPhrases.length) {
-      group.push(allPhrases[phraseIdx]);
-      const joined = group.join(" ").replace(/[^a-zA-Z ]/g,"").toLowerCase();
-      phraseIdx++;
-      if (sentClean.endsWith(joined.slice(-20).trim()) || phraseIdx >= allPhrases.length) break;
-    }
-    sentGroups.push({ sent: sent.trim(), phrases: group });
-  });
-
-  function playPhrase(phrase, idx) {
-    setPlayingPhrase(idx);
-    const u = new SpeechSynthesisUtterance(phrase);
-    u.lang = "en-US"; u.rate = 0.85;
-    u.onend = () => setPlayingPhrase(null);
+  function playText(t, idx) {
     window.speechSynthesis.cancel();
+    setPlayingIdx(idx);
+    const u = new SpeechSynthesisUtterance(t);
+    u.lang = "en-US"; u.rate = 0.85;
+    u.onend = () => setPlayingIdx(null);
     window.speechSynthesis.speak(u);
   }
 
-  function playSentence(sent, idx) {
-    setPlayingSent(idx);
-    const u = new SpeechSynthesisUtterance(sent);
-    u.lang = "en-US"; u.rate = 0.85;
-    u.onend = () => setPlayingSent(null);
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
+  function renderSlashLine(slashLine) {
+    const parts = slashLine.split(" / ");
+    return parts.map((phrase, pi) => (
+      <span key={pi}>
+        {phrase.split(/(\s+)/).map((w, wi) => {
+          const clean = w.replace(/[^a-zA-Z]/g,"").toLowerCase();
+          const hasDict = clean && Object.keys(DICT).includes(clean);
+          return (
+            <span key={wi}
+              onClick={hasDict ? (e)=>{ e.stopPropagation(); setTooltip(clean); } : undefined}
+              style={hasDict ? {borderBottom:"1.5px dotted #1D9E75",cursor:"pointer",color:"#0a5c3f"} : {}}
+            >{w}</span>
+          );
+        })}
+        {pi < parts.length - 1 && <span style={{color:"#1D9E75",fontWeight:700,margin:"0 3px"}}>/</span>}
+        {" "}
+      </span>
+    ));
   }
-
-  function renderWords(phrase) {
-    return phrase.split(/(\s+)/).map((w, wi) => {
-      const clean = w.replace(/[^a-zA-Z]/g,"").toLowerCase();
-      const hasDict = clean && Object.keys(DICT).includes(clean);
-      return (
-        <span key={wi}
-          onClick={hasDict ? (e)=>{ e.stopPropagation(); setTooltip(clean); } : undefined}
-          style={hasDict ? {borderBottom:"1.5px dotted #1D9E75",cursor:"pointer",color:"#0a5c3f"} : {}}
-        >{w}</span>
-      );
-    });
-  }
-
-  let globalPhraseIdx = 0;
 
   return (
     <div style={{fontSize:15,lineHeight:1.9,color:"#222"}}>
       {tooltip && <Tooltip word={tooltip} onClose={()=>setTooltip(null)} />}
-      {sentGroups.map((sg, si) => {
-        const sentIdx = si;
-        return (
-          <div key={si} style={{marginBottom:14}}>
-            {/* 문장 전체 재생 버튼 */}
-            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
-              <button onClick={()=>playSentence(sg.sent, sentIdx)} style={{
-                flexShrink:0, width:26, height:26, borderRadius:"50%", border:"none",
-                background: playingSent===sentIdx ? "#1D9E75" : "#e8f7f1",
-                color: playingSent===sentIdx ? "#fff" : "#1D9E75",
-                fontSize:11, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
-              }}>▶</button>
-              <span style={{fontSize:11,color:"#aaa"}}>문장</span>
-            </div>
-            {/* 구문별 */}
-            <div style={{paddingLeft:4}}>
-              {sg.phrases.map((phrase, pi) => {
-                const gpi = globalPhraseIdx++;
-                return (
-                  <span key={pi} style={{display:"inline"}}>
-                    <button onClick={()=>playPhrase(phrase, gpi)} style={{
-                      display:"inline-flex", alignItems:"center", justifyContent:"center",
-                      width:18, height:18, borderRadius:"50%", border:"none",
-                      background: playingPhrase===gpi ? "#1D9E75" : "#f0f0f0",
-                      color: playingPhrase===gpi ? "#fff" : "#999",
-                      fontSize:8, cursor:"pointer", verticalAlign:"middle",
-                      marginRight:4, flexShrink:0,
-                    }}>▶</button>
-                    {renderWords(phrase)}
-                    {pi < sg.phrases.length - 1 && (
-                      <span style={{color:"#1D9E75",fontWeight:700,margin:"0 3px"}}>/</span>
-                    )}
-                    {" "}
-                  </span>
-                );
-              })}
-            </div>
+
+      {/* 청크 전체 재생 */}
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14,paddingBottom:10,borderBottom:"1px solid #f0f0f0"}}>
+        <button onClick={()=>playText(text, -1)} style={{
+          display:"flex",alignItems:"center",gap:5,padding:"6px 14px",borderRadius:20,border:"none",
+          background: playingIdx===-1 ? "#1D9E75" : "#e8f7f1",
+          color: playingIdx===-1 ? "#fff" : "#1D9E75",
+          fontSize:13,cursor:"pointer",fontWeight:500,
+        }}>▶ 전체 듣기</button>
+      </div>
+
+      {/* 문장별 */}
+      {sentences.map((sent, si) => (
+        <div key={si} style={{display:"flex",alignItems:"flex-start",gap:8,marginBottom:12}}>
+          <button onClick={()=>playText(sent.trim(), si)} style={{
+            flexShrink:0,marginTop:3,width:24,height:24,borderRadius:"50%",border:"none",
+            background: playingIdx===si ? "#1D9E75" : "#e8f7f1",
+            color: playingIdx===si ? "#fff" : "#1D9E75",
+            fontSize:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",
+          }}>▶</button>
+          <div style={{flex:1}}>
+            {renderSlashLine(slashText.split(" / ").filter(p =>
+              sent.toLowerCase().includes(p.replace(/[^a-zA-Z ]/g,"").toLowerCase().trim().slice(0,10))
+            ).join(" / ") || sent)}
           </div>
-        );
-      })}
+        </div>
+      ))}
     </div>
   );
 }
