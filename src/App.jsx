@@ -1,7 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 
-// ── 사전 (초등 3학년 수준 단어만) ──────────────────────────────
+// ── 사전 (마크 맞춤 단어장) ──────────────────────────────────
 const DICT = {
+  "fairly": "꽤, 상당히",
+  "synthetic": "합성의 — 자연이 아닌 사람이 만든",
+  "derived": "~에서 얻어진, 유래된",
+  "petroleum": "석유",
+  "crude": "정제 안 된, 원래 그대로의",
+  "discarded": "버려진, 폐기된",
+  "extremely": "극도로, 매우",
+  "thick": "두꺼운, 걸쭉한",
   "wondered": "궁금했다",
   "wearing": "입는 것",
   "bad": "나쁜",
