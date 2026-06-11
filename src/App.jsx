@@ -240,6 +240,23 @@ function SlashText({ slashText, text, chunkText }) {
     ));
   }
 
+  const phrases = slashText.split(" / ");
+  let phraseIndex = 0;
+  const sentPhrases = sentences.map(sent => {
+    const sentClean = sent.toLowerCase().replace(/[^a-z ]/g, "");
+    const result = [];
+    while (phraseIndex < phrases.length) {
+      const phraseClean = phrases[phraseIndex].replace(/[^a-zA-Z ]/g, "").toLowerCase().trim();
+      if (sentClean.includes(phraseClean)) {
+        result.push(phrases[phraseIndex]);
+        phraseIndex++;
+      } else {
+        break;
+      }
+    }
+    return result.length > 0 ? result.join(" / ") : sent;
+  });
+
   return (
     <div style={{fontSize:15,lineHeight:1.9,color:"#222"}}>
       {tooltip && <Tooltip word={tooltip} onClose={()=>setTooltip(null)} />}
@@ -264,9 +281,7 @@ function SlashText({ slashText, text, chunkText }) {
             fontSize:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",
           }}>▶</button>
           <div style={{flex:1}}>
-            {renderSlashLine(slashText.split(" / ").filter(p =>
-              sent.toLowerCase().includes(p.replace(/[^a-zA-Z ]/g,"").toLowerCase().trim().slice(0,10))
-            ).join(" / ") || sent)}
+            {renderSlashLine(sentPhrases[si])}
           </div>
         </div>
       ))}
