@@ -388,7 +388,7 @@ function AddScriptModal({ onClose, onAdd }) {
     if (!text.trim()) return;
     setLoading(true); setError("");
     try {
-      const res = await fetch("https://corsproxy.io/?https://api.anthropic.com/v1/messages", {
+      const res = await fetch("https://corsproxy.io/?https://corsproxy.io/?https://api.anthropic.com/v1/messages", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
