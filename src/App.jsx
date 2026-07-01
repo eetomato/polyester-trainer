@@ -172,6 +172,113 @@ const defaultChunks = [
   }
 ];
 
+const brianChunks = [
+  {
+    id: 1, label: "오해 & 정정",
+    tip: "핵심 흐름: 오해(한국어 공부) → 정정(원어민) → 목적(외국인 가르치기)",
+    slashText: "I'm studying Korean. / I was wondering, / how can I make learning Korean / easier for beginner lessons? / I've heard it / can be quite straightforward. / No, I mean / I'm a native Korean speaker. / I'm trying to teach foreigners.",
+    text: "I'm studying Korean. I was wondering, how can I make learning Korean easier for beginner lessons? I've heard it can be quite straightforward. No, I mean I'm a native Korean speaker. I'm trying to teach foreigners.",
+    pattern: { label: "I was wondering, ~", desc: "부드럽게 질문을 꺼낼 때 쓰는 표현 — 직접 묻는 것보다 공손함", example: "I was wondering, how can I make learning Korean easier?" },
+    keywords: ["beginner lessons","quite straightforward","native Korean speaker","teach foreigners"],
+    blanks: [
+      { pre:"I was wondering, how can I make learning Korean ", word:"easier", post:" for beginner lessons?", opts:["harder","easier","faster"] },
+      { pre:"I've heard it can be quite ", word:"straightforward", post:".", opts:["difficult","straightforward","complicated"] },
+      { pre:"I'm a native Korean speaker. I'm trying to ", word:"teach foreigners", post:".", opts:["learn Japanese","teach foreigners","study abroad"] }
+    ],
+    puzzleSentences: [
+      ["I was wondering,","how can I make","learning Korean easier?"],
+      ["No, I mean","I'm a native Korean speaker.","I'm trying to teach foreigners."],
+    ]
+  },
+  {
+    id: 2, label: "일본어 독학 경험",
+    tip: "대비 구조: enjoyable ↔ quite difficult → 그래서 돕고 싶다",
+    slashText: "I speak Japanese well, / and when I studied it, / I did so on my own. / It was enjoyable / but also quite difficult. / So, for anyone learning Korean, / I want to help them.",
+    text: "I speak Japanese well, and when I studied it, I did so on my own. It was enjoyable but also quite difficult. So, for anyone learning Korean, I want to help them.",
+    pattern: { label: "on my own", desc: "혼자서, 독학으로 — without any help from others", example: "I studied Japanese on my own." },
+    keywords: ["speak Japanese well","on my own","enjoyable","quite difficult","help them"],
+    blanks: [
+      { pre:"When I studied Japanese, I did so ", word:"on my own", post:".", opts:["at school","on my own","with a tutor"] },
+      { pre:"It was enjoyable but also ", word:"quite difficult", post:".", opts:["quite easy","quite difficult","very boring"] },
+      { pre:"For anyone learning Korean, I want to ", word:"help them", post:".", opts:["test them","help them","challenge them"] }
+    ],
+    puzzleSentences: [
+      ["I speak Japanese well,","and I studied it","on my own."],
+      ["It was enjoyable","but also","quite difficult."],
+      ["for anyone learning Korean,","I want to","help them."],
+    ]
+  },
+  {
+    id: 3, label: "듣기 반복 학습법",
+    tip: "경험(애니·음악) → 방법(듣고 따라하기) → 계획(가이드 제작) 순서",
+    slashText: "When I was learning Japanese, / I spent a lot of time / watching Japanese animations / and listening to music, / and I also practiced / by listening and repeating. / That was very helpful, / so I'm going to create / a listen-and-repeat study guide.",
+    text: "When I was learning Japanese, I spent a lot of time watching Japanese animations and listening to music, and I also practiced by listening and repeating. That was very helpful, so I'm going to create a listen-and-repeat study guide.",
+    pattern: { label: "I spent a lot of time -ing", desc: "~하는 데 많은 시간을 보냈다 — 과거 습관 강조", example: "I spent a lot of time watching Japanese animations." },
+    keywords: ["spent a lot of time","Japanese animations","listening to music","listening and repeating","study guide"],
+    blanks: [
+      { pre:"I spent a lot of time watching Japanese animations and ", word:"listening to music", post:".", opts:["speaking English","listening to music","reading books"] },
+      { pre:"I practiced by listening and ", word:"repeating", post:".", opts:["writing","repeating","translating"] },
+      { pre:"I'm going to create a listen-and-repeat ", word:"study guide", post:".", opts:["textbook","study guide","grammar test"] }
+    ],
+    puzzleSentences: [
+      ["I spent a lot of time","watching Japanese animations","and listening to music."],
+      ["I also practiced","by listening","and repeating."],
+      ["That was very helpful,","so I'm going to create","a listen-and-repeat study guide."],
+    ]
+  },
+  {
+    id: 4, label: "수업 목표 — 회화 중심",
+    tip: "이유(친구 사귀기) → 목표(회화 & 말하기 실력) 연결 고리",
+    slashText: "So many people / want to make friends, / so if I created lesson materials, / I'd focus on / daily conversation practice / or developing speaking skills.",
+    text: "So many people want to make friends, so if I created lesson materials, I'd focus on daily conversation practice or developing speaking skills.",
+    pattern: { label: "I'd focus on ~", desc: "가정법 과거 — 만약 ~라면 ...에 집중하겠다", example: "If I created lesson materials, I'd focus on daily conversation practice." },
+    keywords: ["make friends","lesson materials","daily conversation practice","developing speaking skills"],
+    blanks: [
+      { pre:"Many people want to ", word:"make friends", post:".", opts:["learn grammar","make friends","pass exams"] },
+      { pre:"I'd focus on daily ", word:"conversation practice", post:" or developing speaking skills.", opts:["grammar rules","conversation practice","vocabulary lists"] },
+      { pre:"If I created ", word:"lesson materials", post:", I'd focus on conversation.", opts:["lesson materials","a textbook","a grammar guide"] }
+    ],
+    puzzleSentences: [
+      ["so many people","want to","make friends."],
+      ["if I created lesson materials,","I'd focus on","daily conversation practice."],
+    ]
+  },
+  {
+    id: 5, label: "날씨 대화 — 장마 vs 맑음",
+    tip: "대비 구조: 일본 장마(종일 비) ↔ 오늘 날씨(맑고 바람)",
+    slashText: "Weather is the easiest. / The weather is nice. / The reason for that / is the rainy season in Japan, / which usually means / it rains all day. / However, today / it's sunny with a bit of wind.",
+    text: "Weather is the easiest. The weather is nice. The reason for that is the rainy season in Japan, which usually means it rains all day. However, today it's sunny with a bit of wind.",
+    pattern: { label: "which usually means ~", desc: "앞 내용의 의미·결과를 설명하는 관계절", example: "the rainy season in Japan, which usually means it rains all day." },
+    keywords: ["rainy season","rains all day","sunny","a bit of wind"],
+    blanks: [
+      { pre:"The reason is the ", word:"rainy season", post:" in Japan.", opts:["dry season","rainy season","winter season"] },
+      { pre:"It usually means it ", word:"rains all day", post:".", opts:["snows heavily","rains all day","gets very hot"] },
+      { pre:"Today it's sunny with a bit of ", word:"wind", post:".", opts:["rain","wind","cloud"] }
+    ],
+    puzzleSentences: [
+      ["The reason for that","is the rainy season in Japan,","which usually means it rains all day."],
+      ["However, today","it's sunny","with a bit of wind."],
+    ]
+  },
+  {
+    id: 6, label: "마무리 인사",
+    tip: "날씨 좋은 날 루틴 → 전화 감사 → 다음 통화 약속 순서",
+    slashText: "On a nice day like this, / I usually stay in, / tidy up my room, / and prepare my lunchbox. / Thanks for calling today, Brian. / Talk to you next time!",
+    text: "On a nice day like this, I usually stay in, tidy up my room, and prepare my lunchbox. Thanks for calling today, Brian. Talk to you next time!",
+    pattern: { label: "On a ~ day like this", desc: "이런 날 — 날씨·분위기를 배경으로 제시하는 전치사구", example: "On a nice day like this, I usually stay in." },
+    keywords: ["stay in","tidy up","lunchbox","Thanks for calling","next time"],
+    blanks: [
+      { pre:"On a nice day like this, I usually ", word:"stay in", post:".", opts:["go out","stay in","sleep in"] },
+      { pre:"I tidy up my room and prepare my ", word:"lunchbox", post:".", opts:["dinner","lunchbox","breakfast"] },
+      { pre:"Thanks for ", word:"calling", post:" today, Brian.", opts:["calling","visiting","writing"] }
+    ],
+    puzzleSentences: [
+      ["On a nice day like this,","I usually stay in","and tidy up my room."],
+      ["Thanks for calling today, Brian.","Talk to you","next time!"],
+    ]
+  }
+];
+
 const MODES = ["① 읽기","② 키워드","③ 빈칸","④ 퍼즐"];
 
 // ── TTS 음성 재생 ────────────────────────────────────────────
@@ -459,7 +566,7 @@ ${text}` }]
 
 // ── 메인 ─────────────────────────────────────────────────────
 export default function App() {
-  const [scripts, setScripts] = useState([{ title:"Polyester", chunks: defaultChunks }]);
+  const [scripts, setScripts] = useState([{ title:"Polyester", chunks: defaultChunks }, { title:"Brian 대화", chunks: brianChunks }]);
   const [scriptIdx, setScriptIdx] = useState(0);
   const [ci, setCi] = useState(0);
   const [mode, setMode] = useState(0);
