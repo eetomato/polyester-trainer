@@ -485,80 +485,31 @@ function PuzzleMode({ chunk, onDone }) {
   );
 }
 
-// ── 스크립트 추가 모달 ────────────────────────────────────────
-function AddScriptModal({ onClose, onAdd }) {
-  const [text, setText] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  async function generate() {
-    if (!text.trim()) return;
-    setLoading(true); setError("");
-    try {
-      const res = await fetch("/api/generate", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          model:"claude-sonnet-4-20250514",
-          max_tokens:2000,
-          messages:[{ role:"user", content:`아래 영어 스크립트를 암기 학습용으로 분석해줘. JSON만 출력하고 다른 텍스트는 절대 쓰지 마.
-
-형식:
-{
-  "chunks": [
-    {
-      "label": "섹션 제목 (한국어, 15자 이내)",
-      "tip": "암기 팁 (한국어, 30자 이내)",
-      "text": "원문 텍스트",
-      "slashText": "끊어읽기 슬래시 포함 텍스트 (/ 로 구분)",
-      "pattern": { "label": "패턴명", "desc": "한국어 설명", "example": "예문" },
-      "keywords": ["핵심단어1", "핵심단어2"],
-      "blanks": [
-        {"pre": "앞텍스트", "word": "정답", "post": "뒤텍스트", "opts": ["오답1", "정답", "오답2"]}
-      ],
-      "puzzleSentences": [
-        ["청크1", "청크2", "청크3"]
-      ]
-    }
-  ]
-}
-
-규칙:
-- 3~6개 청크로 나눠
-- slashText는 의미 단위로 / 삽입
-- pattern은 구동사, 수동태, 분사구문 등 문법 패턴 1개
-- blanks 2~3개, opts는 항상 3개 (정답 포함)
-- puzzleSentences는 청크당 2~3문장, 각 문장을 2~4개 덩어리로
-
-스크립트:
-${text}` }]
-        })
-      });
-      const data = await res.json();
-      const raw = data.content[0].text.replace(/```json|```/g,"").trim();
-      const parsed = JSON.parse(raw);
-      onAdd(parsed.chunks);
-    } catch(e) {
-      setError("생성 실패. 다시 시도해줘.");
-    }
-    setLoading(false);
+// ── 워크플로 안내 모달 ───────────────────────────────────────
+function WorkflowModal({ onClose }) {
+  function confirm() {
+    localStorage.setItem("workflowSeen", "1");
+    onClose();
   }
-
   return (
-    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"24px 20px",width:"100%",maxWidth:520}}>
-        <div style={{fontSize:16,fontWeight:600,marginBottom:4}}>새 스크립트 추가</div>
-        <div style={{fontSize:13,color:"#888",marginBottom:14}}>영어 텍스트를 붙여넣으면 AI가 자동으로 분석해줘.</div>
-        <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="스크립트를 여기에 붙여넣어..."
-          style={{width:"100%",minHeight:140,padding:"10px 12px",fontSize:14,border:"1px solid #ddd",borderRadius:10,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box"}}
-        />
-        {error && <div style={{color:"#c0392b",fontSize:13,marginTop:6}}>{error}</div>}
-        <div style={{display:"flex",gap:8,marginTop:12}}>
-          <button onClick={onClose} style={{flex:1,padding:"10px",borderRadius:8,border:"1px solid #ddd",background:"#f5f5f5",fontSize:14,cursor:"pointer"}}>취소</button>
-          <button onClick={generate} disabled={loading||!text.trim()} style={{flex:2,padding:"10px",borderRadius:8,border:"none",background:loading?"#aaa":"#1D9E75",color:"#fff",fontSize:14,cursor:"pointer",fontWeight:500}}>
-            {loading ? "AI 분석 중..." : "✦ AI로 생성"}
-          </button>
+    <div style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{background:"#fff",borderRadius:16,padding:"28px 24px",width:"90%",maxWidth:360,boxShadow:"0 8px 32px rgba(0,0,0,0.18)"}}>
+        <div style={{fontSize:17,fontWeight:700,color:"#111",marginBottom:18}}>워크플로 안내</div>
+        <div style={{fontSize:14,fontWeight:600,color:"#1D9E75",marginBottom:14}}>📝 새 스크립트 추가하려면?</div>
+        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
+          {[
+            "텍스트를 Claude에게 전달",
+            "Claude가 청크/키워드/빈칸 생성",
+            "Claude Code가 App.jsx에 추가",
+            "deploy로 자동 배포",
+          ].map((step, i) => (
+            <div key={i} style={{display:"flex",alignItems:"flex-start",gap:10}}>
+              <div style={{flexShrink:0,width:22,height:22,borderRadius:"50%",background:"#1D9E75",color:"#fff",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{i+1}</div>
+              <div style={{fontSize:14,color:"#333",lineHeight:1.5,paddingTop:2}}>{step}</div>
+            </div>
+          ))}
         </div>
+        <button onClick={confirm} style={{width:"100%",padding:"11px",borderRadius:8,border:"none",background:"#1D9E75",color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer"}}>확인</button>
       </div>
     </div>
   );
@@ -566,7 +517,7 @@ ${text}` }]
 
 // ── 메인 ─────────────────────────────────────────────────────
 export default function App() {
-  const [scripts, setScripts] = useState([{ title:"Polyester", chunks: defaultChunks }, { title:"Brian 대화", chunks: brianChunks }]);
+  const [scripts] = useState([{ title:"Polyester", chunks: defaultChunks }, { title:"Brian 대화", chunks: brianChunks }]);
   const [scriptIdx, setScriptIdx] = useState(0);
   const [ci, setCi] = useState(0);
   const [mode, setMode] = useState(0);
@@ -574,7 +525,7 @@ export default function App() {
   const [hidden, setHidden] = useState(new Set());
   const [inputs, setInputs] = useState({});
   const [checked, setChecked] = useState(false);
-  const [showAdd, setShowAdd] = useState(false);
+  const [showWorkflow, setShowWorkflow] = useState(() => !localStorage.getItem("workflowSeen"));
 
   const chunks = scripts[scriptIdx].chunks;
   const chunk = chunks[ci];
@@ -591,15 +542,6 @@ export default function App() {
     if (chunk.blanks.every((_,i) => isCorrect(i))) setDone(prev => new Set([...prev, ci]));
   }
 
-  function addScript(newChunks) {
-    const numbered = newChunks.map((c,i) => ({...c, id:i+1}));
-    const newIdx = scripts.length;
-    setScripts(prev => [...prev, { title:`스크립트 ${prev.length+1}`, chunks:numbered }]);
-    setScriptIdx(newIdx);
-    setCi(0); setMode(0); setDone(new Set()); setHidden(new Set()); setInputs({}); setChecked(false);
-    setShowAdd(false);
-  }
-
   const s = {
     wrap:{maxWidth:520,margin:"0 auto",padding:"20px 16px",minHeight:"100vh"},
     progBar:{height:6,background:"#e8e8e8",borderRadius:3,margin:"8px 0 4px"},
@@ -614,11 +556,10 @@ export default function App() {
 
   return (
     <div style={s.wrap}>
-      {showAdd && <AddScriptModal onClose={()=>setShowAdd(false)} onAdd={addScript} />}
+      {showWorkflow && <WorkflowModal onClose={()=>setShowWorkflow(false)} />}
 
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+      <div style={{marginBottom:4}}>
         <div style={{fontSize:17,fontWeight:600,color:"#111"}}>Script trainer</div>
-        <button onClick={()=>setShowAdd(true)} style={{padding:"5px 12px",fontSize:13,borderRadius:8,border:"none",background:"#1D9E75",color:"#fff",cursor:"pointer"}}>+ 추가</button>
       </div>
 
       {scripts.length > 1 && (
