@@ -513,7 +513,7 @@ function PuzzleMode({ chunk, onDone }) {
 // ── 워크플로 안내 모달 ───────────────────────────────────────
 function WorkflowModal({ onClose }) {
   function confirm() {
-    localStorage.setItem("workflowSeen", "1");
+    localStorage.setItem("workflow_seen", "true");
     onClose();
   }
   return (
@@ -523,10 +523,10 @@ function WorkflowModal({ onClose }) {
         <div style={{fontSize:14,fontWeight:600,color:"#1D9E75",marginBottom:14}}>📝 새 스크립트 추가하려면?</div>
         <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
           {[
-            "텍스트를 Claude에게 전달",
-            "Claude가 청크/키워드/빈칸 생성",
-            "Claude Code가 App.jsx에 추가",
-            "deploy로 자동 배포",
+            "암기할 텍스트를 Claude에게 전달",
+            "Claude가 청크 / 키워드 / 빈칸 생성",
+            "Claude Code가 App.jsx에 자동 추가",
+            "deploy 명령어로 배포 완료",
           ].map((step, i) => (
             <div key={i} style={{display:"flex",alignItems:"flex-start",gap:10}}>
               <div style={{flexShrink:0,width:22,height:22,borderRadius:"50%",background:"#1D9E75",color:"#fff",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{i+1}</div>
@@ -550,7 +550,7 @@ export default function App() {
   const [hidden, setHidden] = useState(new Set());
   const [inputs, setInputs] = useState({});
   const [checked, setChecked] = useState(false);
-  const [showWorkflow, setShowWorkflow] = useState(() => !localStorage.getItem("workflowSeen"));
+  const [showWorkflow, setShowWorkflow] = useState(() => !localStorage.getItem("workflow_seen"));
 
   const chunks = scripts[scriptIdx].chunks;
   const chunk = chunks[ci];
